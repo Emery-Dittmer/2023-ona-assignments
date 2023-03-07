@@ -1,9 +1,8 @@
 ---
-output:
-  md_document:
-    variant: markdown_github
+title: "hello-ona"
+output: github_document
 ---
-
+    
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
