@@ -3,21 +3,306 @@ title: "Assignment 1"
 output: github_document
 ---
 
-```{r setup}
+# Setup
+Before getting started on visualizing the network lets set up the libraries and data we need.
 
+```{r setup}
 library(readr)
 library(dplyr)
 library(tidygraph)
+library(reticulate)
+library(stringr)
+library(ggplot2)
+library(ggraph)
+library(tidyverse)
+```
+
+Let's import the data.
+
+```{r Data loading}
+#Import as Text
+my_data <- read.delim('Connections.csv',sep =",", header = TRUE,skip=3)
+#Import as CSV
 connections=read.csv('Connections.csv',skip=3)
 
+#limit data for simplicity
+#connections=connections[1:50,]
 ```
 
+## Data pre-processing
+
+
+
 ```{r get networks}
-routes <- small_trains %>%
-  group_by(departure_station, arrival_station) %>%
-  summarise(journey_time = mean(journey_time_avg)) %>%
-  ungroup() %>%
-  mutate(from = departure_station, 
-         to = arrival_station) %>%
-  select(from, to, journey_time)
+connections=drop_na(connections)
+connections <- subset(connections, Company != "")
+
+#this datframe shows all the connections with a total!
+Connections_Detail_with_total <- connections %>%
+  filter(!is.na(Company)) %>%
+  #not all blanks were caught by the filter. Requires more robust approach
+  filter(length(Company)>2) %>%
+  group_by(Company) %>%
+  summarise(weight=n()) %>%
+  bind_rows(summarise(., across(where(is.numeric), sum),
+                         across(where(is.character), ~'Total')))
+
+Connections_Detail <- connections %>%
+  filter(!is.na(Company)) %>%
+  #not all blanks were caught by the filter. Requires more robust approach
+  filter(length(Company)>2) %>%
+  group_by(Company) %>%
+  summarise(weight=n())
+
+#get the list of names and how the connections fit
+Connections_Detail=merge(Connections_Detail,connections,by='Company',all=TRUE)
+
+#add First and last
+Connections_Detail <- Connections_Detail %>%
+  mutate(peoplenames = paste(First.Name,substring(Last.Name,1,1)))
+
+#set column order
+col_order=c("peoplenames","weight","Company","First.Name","Last.Name","Email.Address","Position","Connected.On")
+
+#reorder columns
+Connections_Detail <- Connections_Detail[, col_order]
+
+#add to and from fields
+Connections_Detail <- Connections_Detail %>%
+  mutate(from = Company, 
+         to = peoplenames) %>%
+  select(from, to, weight)
+
+#get company names for later
+companies <- unique(Connections_Detail$from)
+
+#Add yourself to the network
+##create a dataframe of yourself
+You_network=data.frame(from=rep("you",length(unique(Connections_Detail$from))),to=unique(Connections_Detail$from),weight=rep(1,length(unique(Connections_Detail$from))))
+
+#adding to the concctiond
+Connections_Detail=rbind(Connections_Detail,You_network)
+
 ```
+
+#Visulization
+## Plot as a network unsing ggraph
+First we need a few transformations.
+Now set the network as a graph table for simplicity.
+```{r graph table}
+graph_connections <- as_tbl_graph(Connections_Detail)
+```
+
+
+We will need to modify the table slightly to make sure that it is accepted by the code.
+
+```{r nework plotting 2 }
+graph_connections <- graph_connections %>%
+  activate(nodes) %>%
+  mutate(
+    title = str_to_title(name),
+    label = str_replace_all(title, " ", "\n")
+    )
+
+graph_connections
+```
+
+
+```{r network plotting 4}
+thm <- theme_minimal() +
+  theme(
+    legend.position = "none",
+     axis.title = element_blank(),
+     axis.text = element_blank(),
+     panel.grid = element_blank(),
+     panel.grid.major = element_blank(),
+  ) 
+
+theme_set(thm)
+graph_connections %>%
+  ggraph(layout = "kk") +
+    geom_node_point() +
+    geom_edge_diagonal() +
+  geom_node_text(aes(label = label, alpha=0.1))
+  
+```
+```{r netwrok plotting 5}
+theme_set(thm)
+graph_connections %>%
+  ggraph(layout = "kk") +
+    geom_node_point() +
+    geom_edge_diagonal() +
+  geom_node_text(aes(label = label, alpha=0.1))
+```
+
+
+```{r netwrok plotting 6}
+lapply(c('stress', 'fr', 'lgl', 'graphopt','kk'), function(layout) {
+  graph_connections %>%
+    ggraph(layout = layout) +
+    geom_edge_fan(width = .2, color = 'lightblue') + 
+    geom_node_text(aes(label = label, color = name), size = 2) + 
+    coord_fixed()+
+    scale_fill_brewer()
+})
+```
+```{r netwrok plotting 7}
+lapply(c('stress', 'fr', 'lgl', 'graphopt','kk'), function(layout) {
+  graph_connections %>%
+    ggraph(layout = layout) +
+    geom_edge_fan(width = .2, color = 'lightblue') + 
+    coord_fixed()+
+    scale_fill_brewer()
+})
+```
+
+
+```{r netwrok plotting 8}
+graph_connections %>%
+  ggraph(layout = "stress") +
+    geom_node_text(aes(label = label, color = name), size = 2) +
+    geom_edge_diagonal(color = "gray", alpha = 0.4) 
+```
+```{r netwrok plotting 9}
+graph_connections %>%
+  ggraph(layout = "stress") +
+    geom_edge_diagonal(color = "gray", alpha = 0.4) 
+```
+
+```{r netwrok plotting 10}
+ggraph(graph_connections, 'circlepack') + 
+  geom_edge_link() + 
+  geom_node_point(aes(colour = depth)) +
+  coord_fixed()
+```
+
+```{r netwrok plotting 11}
+ggraph(graph_connections, 'tree') + 
+  geom_edge_diagonal()+
+  geom_node_text(aes(label = label,alpha=0.2, color='blue'),size=3)
+```
+
+```{r netwrok plotting 12}
+ggraph(graph_connections, 'dendrogram', circular = TRUE ) + 
+  geom_edge_elbow() + 
+  #coord_fixed()+
+  #geom_node_text(aes(label = label , color = name), size = 2)+
+  geom_node_text(aes(label = label , color = ifelse(name %in% companies, "red","black"), size = 2))
+```
+
+Attempted a branching or unrooted tree but it was not effective
+```{r netwrok plotting 13}
+ggraph(graph_connections, 'unrooted') + 
+  geom_edge_link()+
+  geom_node_text(aes(label = label), size = 2)
+```
+
+
+## Tidy Graph implementation
+**Credit to:http://users.dimi.uniud.it/~massimo.franceschet/ns/syllabus/make/tidygraph/tidygraph.html**
+
+```{r tidy graph 1}
+# graph analysis and visualziation
+library(tidygraph)
+library(ggraph)
+library(igraph)
+
+# tidy data analysis and visualziation
+library(readr)
+library(dplyr)
+
+```
+
+```{r tidy graph 2}
+graph <- as_tbl_graph(Connections_Detail)
+
+# plot using ggraph
+ggraph(graph, layout = 'kk') + 
+    geom_edge_fan(aes(alpha = after_stat(index)), show.legend = FALSE) + 
+    geom_node_point() + 
+    theme_graph(foreground = 'steelblue', fg_text_colour = 'white')
+
+```
+
+
+Visualizing the table is tricky but we can do some data manipulations to show what is happening.
+**help from: https://stackoverflow.com/questions/63997659/get-edge-data-from-the-tidygraph-package**
+
+```{r graph nodes connections}
+# edge size shows frequency of co-occurrence
+graph %>%
+   ggraph(layout = "fr") +
+   geom_edge_arc(colour= "gray50",
+                  lineend = "round",
+                 strength = .1) +
+   geom_node_point() +
+   geom_node_text(aes(label = name), 
+                  repel = TRUE, 
+                  point.padding = unit(0.2, "lines"), 
+                  colour="gray10") +
+  scale_edge_width(range = c(0, 2.5)) +
+  scale_edge_alpha(range = c(0, .3)) +
+  theme_graph(background = "white") +
+  guides(edge_width = FALSE,
+         edge_alpha = FALSE)
+```
+<!-- Lets try with the name sizes -->
+
+<!-- ```{r graph nodes connections 2} -->
+<!-- # edge size shows frequency of co-occurrence -->
+<!-- graph %>% -->
+<!--    ggraph(layout = "fr") + -->
+<!--    geom_edge_arc(colour= "gray50", -->
+<!--                   lineend = "round", -->
+<!--                  strength = .1) + -->
+<!--    geom_node_point(size=(s)*2) + -->
+<!--    geom_node_text(aes(label = name),  -->
+<!--                   repel = TRUE,  -->
+<!--                   point.padding = unit(0.2, "lines"),  -->
+<!--                   colour="gray10") + -->
+<!--   scale_edge_width(range = c(0, 2.5)) + -->
+<!--   scale_edge_alpha(range = c(0, .3)) + -->
+<!--   theme_graph(background = "white") + -->
+<!--   guides(edge_width = FALSE, -->
+<!--          edge_alpha = FALSE) -->
+<!-- ``` -->
+
+
+# Vsiualization
+## Visulize the results in python's plotly
+
+```{python visulization}
+import pandas as pd
+import numpy as np
+df = pd.read_csv('Connections.csv',skiprows=3)
+df1=df.groupby("Company").filter(lambda x: len(x) > 1)
+df1['Count'] = df1.groupby('Company')['Company'].transform('size')
+df1['Count']=df1['Count'].astype(int)
+import plotly.express as px
+df1=df1.dropna(subset=['Company', 'Position'])
+px.treemap(df1, path=['Company', 'Position'],
+           width=1000,
+           height=1000,
+           color='Count',
+           color_continuous_scale='YlGnBu',
+           color_continuous_midpoint=np.average(df1['Count']))
+```
+
+```{python visulization 2}
+df1=df.groupby("Position").filter(lambda x: len(x) > 1)
+df1['Count'] = df1.groupby('Position')['Position'].transform('size')
+df1['Count']=df1['Count'].astype(int)
+px.treemap(df1, path=['Position','Company'],
+           width=1000,
+           height=1000,
+           color='Count',
+           color_continuous_scale='Inferno',
+           color_continuous_midpoint=np.average(df1['Count']))
+```
+
+
+
+
+
+
+
