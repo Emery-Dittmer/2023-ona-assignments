@@ -323,12 +323,12 @@ df.head()
 <!--            color_continuous_midpoint=np.average(df['Count_Company'])) -->
 <!-- ``` -->
 
-<!-- ```{python viz 3} -->
-<!-- px.treemap(df, path=['Position','Company'], -->
-<!--            width=1000, -->
-<!--            height=1000 -->
-<!--            ) -->
-<!-- ``` -->
+```{python viz 3}
+px.treemap(df, path=['Position','Company'],
+           width=1000,
+           height=1000
+           )
+```
 
 
 ```{python vis 4}
