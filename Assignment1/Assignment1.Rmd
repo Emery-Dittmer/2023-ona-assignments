@@ -3,7 +3,8 @@ title: "Assignment 1"
 author: "Emery Dittmer"
 date: '2023-03-09'
 
-output:github_document
+output:
+  md_document: default
   pdf_document: default
   html_document: default
 ---
