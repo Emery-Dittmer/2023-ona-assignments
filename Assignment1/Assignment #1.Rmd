@@ -2,7 +2,10 @@
 title: "Assignment 1"
 author: "Emery Dittmer"
 date: '2023-03-09'
-output: github_document
+output:
+  github_document
+  pdf_document: default
+  html_document: default
 ---
 
 # LinkedIn Contact Analysis
@@ -215,6 +218,39 @@ ggraph(graph_connections, 'unrooted') +
 ```
 
 
+### Visnetwork
+
+```{r}
+require(visNetwork, quietly = TRUE)
+nodes <- data.frame(Connections_Detail$from)
+edges <- data.frame(from= Connections_Detail$from ,to=Connections_Detail$to)
+visNetwork(nodes, edges, width = "100%")
+```
+
+
+```{r}
+library(rpart)
+require(visNetwork, quietly = TRUE)
+#install.packages('sparkline')
+library(sparkline)
+
+# Complex tree
+data("solder")
+res <- rpart(Opening~., data = solder, control = rpart.control(cp = 0.00005))
+visTree(res, height = "800px", nodesPopSize = TRUE, minNodeSize = 10, maxNodeSize = 30)
+
+
+res <- rpart(name~., data = Conection_Detail, control = rpart.control(cp = 0.005))
+visTree(res, height = "800px", nodesPopSize = TRUE, minNodeSize = 10, maxNodeSize = 30)
+
+
+```
+
+
+
+
+
+
 ### Tidy Graph
 We will now use a package called tidy graphy to visualize the netwrok.
 **Credit to:http://users.dimi.uniud.it/~massimo.franceschet/ns/syllabus/make/tidygraph/tidygraph.html**
@@ -287,43 +323,38 @@ Unforuntely the sizing functions are not currently working but would help determ
 <!-- ``` -->
 
 
-## Vsiualization II
-### Visulize the results in python's plotly
-Let's try some python pacakges to enhance what we have
+<!-- ## Vsiualization II -->
+<!-- ### Visulize the results in python's plotly -->
+<!-- Let's try some python pacakges to enhance what we have -->
 
-```{python visulization}
-import pandas as pd
-import numpy as np
-from pyvis.network import Network
-import plotly.express as px
-import networkx as nx
-import matplotlib.pyplot as plt
-df = pd.read_csv('Connections.csv',skiprows=3)
-df['Full Name']= df.apply(
-    lambda x: str(x['First Name']) +" "+ str(x['Last Name']) ,
-    axis=1)
-    #lambda x: str(x['First Name']) +" "+ str(x['Last Name'])[0] , axis=1)
-df=df.dropna(subset=['Company', 'Position'])
-df=df.groupby("Company").filter(lambda x: len(x) > 1)
+<!-- ```{python visulization} -->
+<!-- import pandas as pd -->
+<!-- import numpy as np -->
+<!-- from pyvis.network import Network -->
+<!-- import plotly.express as px -->
+<!-- import networkx as nx -->
+<!-- import matplotlib.pyplot as plt -->
+<!-- df = pd.read_csv('Connections.csv',skiprows=3) -->
+<!-- df['Full Name']= df.apply( -->
+<!--     lambda x: str(x['First Name']) +" "+ str(x['Last Name']) , -->
+<!--     axis=1) -->
+<!--     #lambda x: str(x['First Name']) +" "+ str(x['Last Name'])[0] , axis=1) -->
+<!-- df=df.dropna(subset=['Company', 'Position']) -->
+<!-- df=df.groupby("Company").filter(lambda x: len(x) > 1) -->
 
-df['Count_Company'] = df.groupby('Company')['Company'].transform('size')
-df['Count_Company']=df['Count_Company'].astype(int)
+<!-- df['Count_Company'] = df.groupby('Company')['Company'].transform('size') -->
+<!-- df['Count_Company']=df['Count_Company'].astype(int) -->
 
-df['Position_Count'] = df.groupby('Position')['Position'].transform('size')
-df['Position_Count']=df['Position_Count'].astype(int)
-df.head()
-```
-
-<!-- ```{python vis 2} -->
+<!-- df['Position_Count'] = df.groupby('Position')['Position'].transform('size') -->
+<!-- df['Position_Count']=df['Position_Count'].astype(int) -->
+<!-- df.head() -->
 <!-- px.treemap(df, path=['Company', 'Position'], -->
 <!--            width=1000, -->
 <!--            height=1000, -->
 <!--            color='Count_Company', -->
 <!--            color_continuous_scale='YlGnBu', -->
 <!--            color_continuous_midpoint=np.average(df['Count_Company'])) -->
-<!-- ``` -->
 
-<!-- ```{python viz 3} -->
 <!-- px.treemap(df, path=['Position','Company'], -->
 <!--            width=1000, -->
 <!--            height=1000 -->
@@ -331,34 +362,39 @@ df.head()
 <!-- ``` -->
 
 
-```{python vis 4}
-net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white",notebook=True,filter_menu=True)
+<!-- ```{python viz 3} -->
 
-# set the physics layout of the network
-net.barnes_hut()
+<!-- ``` -->
 
-sources = df['Company']
-targets = df['Full Name']
-weights = df['Count_Company']
 
-edge_data = zip(sources, targets, weights)
+<!-- ```{python vis 4} -->
+<!-- net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white",notebook=True,filter_menu=True) -->
 
-for e in edge_data:
-                src = e[0]
-                dst = e[1]
-                w = e[2]
-                net.add_node(src, src, title=src)
-                net.add_node(dst, dst, title=dst)
-                net.add_edge(src, dst, value=w)
+<!-- # set the physics layout of the network -->
+<!-- net.barnes_hut() -->
 
-neighbor_map = net.get_adj_list()
+<!-- sources = df['Company'] -->
+<!-- targets = df['Full Name'] -->
+<!-- weights = df['Count_Company'] -->
 
-# add neighbor data to node hover data
-for node in net.nodes:
-                node["title"] += " Neighbors:<br>" + "<br>".join(neighbor_map[node["id"]])
-                node["value"] = len(neighbor_map[node["id"]])
+<!-- edge_data = zip(sources, targets, weights) -->
 
-net.show("network.html")
-```
+<!-- for e in edge_data: -->
+<!--                 src = e[0] -->
+<!--                 dst = e[1] -->
+<!--                 w = e[2] -->
+<!--                 net.add_node(src, src, title=src) -->
+<!--                 net.add_node(dst, dst, title=dst) -->
+<!--                 net.add_edge(src, dst, value=w) -->
+
+<!-- neighbor_map = net.get_adj_list() -->
+
+<!-- # add neighbor data to node hover data -->
+<!-- for node in net.nodes: -->
+<!--                 node["title"] += " Neighbors:<br>" + "<br>".join(neighbor_map[node["id"]]) -->
+<!--                 node["value"] = len(neighbor_map[node["id"]]) -->
+
+<!-- net.show("network.html") -->
+<!-- ``` -->
 
 

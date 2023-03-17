@@ -2,7 +2,10 @@
 title: "Assignment 1"
 author: "Emery Dittmer"
 date: '2023-03-09'
-output: github_document
+
+output:github_document
+  pdf_document: default
+  html_document: default
 ---
 
 # LinkedIn Contact Analysis
@@ -215,6 +218,39 @@ ggraph(graph_connections, 'unrooted') +
 ```
 
 
+### Visnetwork
+
+```{r}
+require(visNetwork, quietly = TRUE)
+nodes <- data.frame(Connections_Detail$from)
+edges <- data.frame(from= Connections_Detail$from ,to=Connections_Detail$to)
+visNetwork(nodes, edges, width = "100%")
+```
+
+
+```{r}
+library(rpart)
+require(visNetwork, quietly = TRUE)
+#install.packages('sparkline')
+library(sparkline)
+
+# Complex tree
+data("solder")
+res <- rpart(Opening~., data = solder, control = rpart.control(cp = 0.00005))
+visTree(res, height = "800px", nodesPopSize = TRUE, minNodeSize = 10, maxNodeSize = 30)
+
+
+res <- rpart(name~., data = Conection_Detail, control = rpart.control(cp = 0.005))
+visTree(res, height = "800px", nodesPopSize = TRUE, minNodeSize = 10, maxNodeSize = 30)
+
+
+```
+
+
+
+
+
+
 ### Tidy Graph
 We will now use a package called tidy graphy to visualize the netwrok.
 **Credit to:http://users.dimi.uniud.it/~massimo.franceschet/ns/syllabus/make/tidygraph/tidygraph.html**
@@ -312,22 +348,22 @@ df['Count_Company']=df['Count_Company'].astype(int)
 df['Position_Count'] = df.groupby('Position')['Position'].transform('size')
 df['Position_Count']=df['Position_Count'].astype(int)
 df.head()
-```
-
-<!-- ```{python vis 2} -->
-<!-- px.treemap(df, path=['Company', 'Position'], -->
-<!--            width=1000, -->
-<!--            height=1000, -->
-<!--            color='Count_Company', -->
-<!--            color_continuous_scale='YlGnBu', -->
-<!--            color_continuous_midpoint=np.average(df['Count_Company'])) -->
-<!-- ``` -->
-
-```{python viz 3}
+px.treemap(df, path=['Company', 'Position'],
+           width=1000,
+           height=1000,
+           color='Count_Company',
+           color_continuous_scale='YlGnBu',
+           color_continuous_midpoint=np.average(df['Count_Company']))
+           
 px.treemap(df, path=['Position','Company'],
            width=1000,
            height=1000
            )
+```
+
+
+```{python viz 3}
+
 ```
 
 
