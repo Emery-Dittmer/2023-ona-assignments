@@ -4,9 +4,9 @@ author: "Emery Dittmer"
 date: '2023-03-09'
 always_allow_html: true
 output:
-  github_document: default
-  md_document: default
   pdf_document: default
+  md_document: default
+  github_document: default
 ---
 ```{r setup, include=FALSE}
 knitr::include_graphics
@@ -31,12 +31,15 @@ We have the following image to base our network and centrality measures off of.
 ### 1.2 Assumptions
 
 To simplify the problem, we will use several assumptions that are listed here:
-1.	We will use a grid to model this problem with 3 types of seats:
+
+-1.	We will use a grid to model this problem with 3 types of seats:
 a.	No Seat: defines a position on the bus that is not a seat. The cabin for the driver or engine take up these spots.
 b.	Occupied: a seat that exists but is currently occupied
 c.	Available: an available seat to be sat in. These are the choice nodes we have.
-2.	We will assume that all the seats will be occupied. Therefore, we will set the weight of each edge from available seats to 100%, even if the seat is currently available.
-3.	We will assume that the alley for walking that divides the seats does not exist. We will not need to account for the small extra distance between seats D and 6.
+
+-2.	We will assume that all the seats will be occupied. Therefore, we will set the weight of each edge from available seats to 100%, even if the seat is currently available.
+
+-3.	We will assume that the alley for walking that divides the seats does not exist. We will not need to account for the small extra distance between seats D and 6.
 
 
 ```{r import pacakges}
