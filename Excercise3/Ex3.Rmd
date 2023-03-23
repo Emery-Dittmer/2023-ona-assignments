@@ -23,6 +23,8 @@ applications <- read_parquet(paste0(data_path,"app_data_sample.parquet"))
 edges <- read_csv(paste0(data_path,"edges_sample.csv"))
 applications
 edges
+
+
 ```
 
 ## Get gender for examiners
@@ -88,6 +90,7 @@ We'll follow the instructions for the package outlined here [https://github.com/
 examiner_race <- predict_race(voter.file = examiner_surnames, surname.only = T) %>% 
   as_tibble()
 examiner_race
+write.csv(examiner_race, "examiner_race.csv", row.names=FALSE)
 ```
 
 As you can see, we get probabilities across five broad US Census categories: white, black, Hispanic, Asian and other. (Some of you may correctly point out that Hispanic is not a race category in the US Census, but these are the limitations of this package.)
