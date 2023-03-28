@@ -437,7 +437,25 @@ visNetwork(nodes, edges)%>%
   visEdges(arrows ="to")%>%
   visEdges(arrows ="from")
 ```
+```{r}
+nodes <- nodes %>% 
+  mutate(group=race)
 
+visNetwork(nodes, edges)%>%
+  visLegend() %>%
+  visEdges(arrows ="to")%>%
+  visEdges(arrows ="from")
+```
+
+```{r}
+nodes <- nodes %>% 
+  mutate(group=gender)
+
+visNetwork(nodes, edges)%>%
+  visLegend() %>%
+  visEdges(arrows ="to")%>%
+  visEdges(arrows ="from")
+```
 
 ## Igraph version
 labels must be removed for igraph or else it does not work well.
