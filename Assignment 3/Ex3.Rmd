@@ -3,9 +3,9 @@ title: "Assignment 3"
 author: "Emery Dittmer"
 date: "2023-03-28"
 output:
-  word_document: default
-  md_document: default
   github_document: default
+  md_document: default
+  word_document: default
   pdf_document: default
 always_allow_html: yes
 ---
@@ -131,48 +131,6 @@ rm(examiner_surnames)
 gc()
 ```
 
-
-## Examiner's tenure 
-
-To figure out the timespan for which we observe each examiner in the applications data, let's find the first and the last observed date for each examiner. We'll first get examiner IDs and application dates in a separate table, for ease of manipulation. We'll keep examiner ID (the field `examiner_id`), and earliest and latest dates for each application (`filing_date` and `appl_status_date` respectively). We'll use functions in package `lubridate` to work with date and time values.
-
-```{r tenure-1}
-library(lubridate) # to work with dates
-examiner_dates <- applications %>% 
-  select(examiner_id, filing_date, appl_status_date) 
-examiner_dates
-```
-
-The dates look inconsistent in terms of formatting. Let's make them consistent. We'll create new variables `start_date` and `end_date`.
-
-```{r tenure-2}
-examiner_dates <- examiner_dates %>% 
-  mutate(start_date = ymd(filing_date), end_date = as_date(dmy_hms(appl_status_date)))
-```
-
-Let's now identify the earliest and the latest date for each examiner and calculate the difference in days, which is their tenure in the organization.
-
-```{r tenure-3}
-examiner_dates <- examiner_dates %>% 
-  group_by(examiner_id) %>% 
-  summarise(
-    earliest_date = min(start_date, na.rm = TRUE), 
-    latest_date = max(end_date, na.rm = TRUE),
-    tenure_days = interval(earliest_date, latest_date) %/% days(1)
-    ) %>% 
-  filter(year(latest_date)<2018)
-examiner_dates
-```
-
-Joining back to the applications data.
-
-```{r tenure-4}
-applications <- applications %>% 
-  left_join(examiner_dates, by = "examiner_id")
-rm(examiner_dates)
-gc()
-```
-
 #2. Focus on Art Unit:Descriptive Stats
 ## Work Unit Breakdown of people
 
@@ -186,9 +144,7 @@ person_level_data <- applications %>%
   summarise(
     art_unit = min(examiner_art_unit, na.rm = TRUE),
     gender = min(gender, na.rm = TRUE),
-    race = min(race,na.rm=TRUE),
-    start_year = min(year(earliest_date), na.rm = TRUE),
-    latest_date = max(latest_date, na.rm = TRUE))%>% 
+    race = min(race,na.rm=TRUE)) %>%
   mutate(
     tc = floor(art_unit/100)*100,
     work_group = as.factor(floor(art_unit/10)*10)
@@ -230,19 +186,22 @@ Let's plot for the top 5 work groups to make it easier to read. First we will lo
 work_unit_level_data_top5 <- work_unit_level_data %>%
   filter(work_group %in% head(work_unit_aggregated$work_group,5))
 
+ggplot(work_unit_level_data_top5,aes(x = work_group, y=n)) +
+  geom_bar(stat="identity", position=position_dodge())
+
 ggplot(work_unit_level_data_top5,aes(x = work_group, fill = gender, y=n)) +
   geom_bar(stat="identity", position=position_dodge())
 
 ggplot(work_unit_level_data_top5,aes(x = work_group, fill = gender, y=n)) +
   geom_bar(stat="identity", position=position_dodge())+
   facet_wrap(~race)
-
-ggplot(work_unit_level_data_top5) +
-  geom_boxplot(aes(x = (work_group),y=n, color = gender))
-
-ggplot(work_unit_level_data_top5) +
-  geom_boxplot(aes(x = (work_group),y=n, color = gender))+
-  facet_wrap(~race)
+# 
+# ggplot(work_unit_level_data_top5) +
+#   geom_boxplot(aes(x = (work_group),y=n, color = gender))
+# 
+# ggplot(work_unit_level_data_top5) +
+#   geom_boxplot(aes(x = (work_group),y=n, color = gender))+
+#   facet_wrap(~race)
 remove(work_unit_level_data_top5)
 ```
 Even the top 5 is alot of data. For the remaining analysis we will focus on the top 2 work_units:
@@ -252,6 +211,9 @@ Even the top 5 is alot of data. For the remaining analysis we will focus on the 
 work_unit_level_data_top2 <- work_unit_level_data %>%
   filter(work_group %in% head(work_unit_aggregated$work_group,2))
 
+ggplot(work_unit_level_data_top2,aes(x = work_group, y=n)) +
+  geom_bar(stat="identity", position=position_dodge())
+
 ggplot(work_unit_level_data_top2,aes(x = work_group, fill = gender, y=n)) +
   geom_bar(stat="identity", position=position_dodge())
 
@@ -259,8 +221,8 @@ ggplot(work_unit_level_data_top2,aes(x = work_group, fill = gender, y=n)) +
   geom_bar(stat="identity", position=position_dodge())+
   facet_wrap(~race)
 
-ggplot(work_unit_level_data_top2) +
-  geom_boxplot(aes(x = (work_group),y=n, color = gender))
+# ggplot(work_unit_level_data_top2) +
+#   geom_boxplot(aes(x = (work_group),y=n, color = gender))
 ```
 
 
@@ -366,6 +328,7 @@ visNetwork(nodes, edges)%>%
   visEdges(arrows ="from")
 ```
 
+Based on this data we will only have about 121 employees in the work groups we are interested in
 
 
 ### 3.1 Degree Centrality
@@ -467,7 +430,8 @@ nodes <- nodes_all %>%
                       "Betweenness:",format(Centrality_Betweenness, digits = 2),"\n",
                       sep = " "),
          group=work_group) %>%
-  mutate(font.size = 12) 
+  mutate(font.size = 12) %>%
+  drop_na()
 
 visNetwork(nodes, edges)%>%
   visLegend() %>%
@@ -486,6 +450,129 @@ plot(net, edge.arrow.size=.4,vertex.label=NA,vertex.size=4)
 plot(net, edge.arrow.size=.4,vertex.label.cex=.4,vertex.label.dist=1,vertex.size=4)
 ```
 
+## Now to look at measures of centrality accross ethnicities and genders
+
+
+```{r}
+#join race and gender data to nodes
+library(gt)
+nodes <- nodes %>%
+  left_join(person_level_data,by=c("id"="examiner_id","work_group"="work_group" ))
+
+ggplot(nodes) +
+  geom_bar(aes(x = work_group))
+
+ggplot(nodes) +
+  geom_bar(aes(x = work_group ,fill=gender))
+
+ggplot(nodes) +
+  geom_bar(aes(x = work_group ,fill=race))
+
+
+nodes %>% 
+  group_by(work_group) %>%
+  count(work_group) %>% 
+  mutate(pct_within_work_group = round(n/sum(n)*100,0)) %>% gt()
+
+nodes %>% 
+  group_by(work_group) %>%
+  count(gender) %>% 
+  mutate(pct_within_work_group = round(n/sum(n)*100,0)) %>% gt()
+
+nodes %>% 
+  group_by(work_group) %>%
+  count(race) %>% 
+  mutate(pct_within_work_group = round(n/sum(n)*100,0)) %>% gt()
+
+nodes %>% 
+  group_by(work_group) %>%
+  summarize(
+    Sum_of_Centrality_Degree=sum(Centrality_Degree),
+    Sum_of_Centrality_Closeness=sum(Centrality_Closeness),
+    Sum_of_Centrality_Betweenness=sum(Centrality_Betweenness),
+    Count=n()
+  ) %>% gt()
+
+nodes %>% 
+  group_by(gender) %>%
+  summarize(
+    Sum_of_Centrality_Degree=sum(Centrality_Degree),
+    Sum_of_Centrality_Closeness=sum(Centrality_Closeness),
+    Sum_of_Centrality_Betweenness=sum(Centrality_Betweenness),
+    Count=n()
+  ) %>% gt()
+
+nodes %>% 
+  group_by(race) %>%
+  summarize(
+    Sum_of_Centrality_Degree=sum(Centrality_Degree),
+    Sum_of_Centrality_Closeness=sum(Centrality_Closeness),
+    Sum_of_Centrality_Betweenness=sum(Centrality_Betweenness),
+    Count=n()
+  ) %>% gt()
+
+nodes %>% 
+  group_by(work_group,race) %>%
+  summarize(
+    Sum_of_Centrality_Degree=sum(Centrality_Degree),
+    Sum_of_Centrality_Closeness=sum(Centrality_Closeness),
+    Sum_of_Centrality_Betweenness=sum(Centrality_Betweenness),
+    Count=n()
+  ) %>% gt()
+
+nodes %>% 
+  group_by(race,gender) %>%
+  summarize(
+    Sum_of_Centrality_Degree=sum(Centrality_Degree),
+    Sum_of_Centrality_Closeness=sum(Centrality_Closeness),
+    Sum_of_Centrality_Betweenness=sum(Centrality_Betweenness),
+    Count=n()
+  ) %>% gt()
+
+nodes %>% 
+  group_by(work_group,race,gender) %>%
+  summarize(
+    Sum_of_Centrality_Degree=sum(Centrality_Degree),
+    Sum_of_Centrality_Closeness=sum(Centrality_Closeness),
+    Sum_of_Centrality_Betweenness=sum(Centrality_Betweenness),
+    Count=n()
+  ) %>% gt()
+
+node_matrix_all <- edges %>%
+  left_join(nodes, by=c("from"="id")) %>%
+  select(from,to,race,gender) %>%
+  rename(from_gender=gender, from_race=race) %>%
+  left_join(nodes, by=c("to"="id")) %>%
+  select(from,to,race,gender,from_gender,from_race) %>%
+  rename(to_gender=gender, to_race=race) %>%
+  drop_na()
+
+node_matrix <- node_matrix_all %>%
+  group_by(to_race,from_race) %>%
+  summarize(
+    count=n()
+  )
+  
+pivot_wider(node_matrix, names_from = to_race, values_from = count )
+
+
+node_matrix <- node_matrix_all %>%
+  group_by(to_gender,from_gender) %>%
+  summarize(
+    count=n()
+  )
+  
+pivot_wider(node_matrix, names_from = to_gender, values_from = count )
+
+node_matrix <- node_matrix_all %>%
+  group_by(from_race,to_gender,from_gender,to_race) %>%
+  summarize(
+    count=n()
+  )
+  
+pivot_wider(node_matrix, names_from = c(to_race,to_gender), values_from = count )
+
+```
 
 ## appendix
 testing to make sure examiners in edges data
