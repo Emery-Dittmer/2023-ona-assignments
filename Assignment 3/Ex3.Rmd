@@ -7,7 +7,6 @@ output:
   md_document: default
   word_document: default
   pdf_document: default
-always_allow_html: yes
 ---
 
 ```{r setup, include=FALSE}
@@ -17,7 +16,7 @@ library(lubridate)
 library(arrow)
 ```
 
-#1:Load data
+# 1:Load data
 
 Load the following data:
   + applications from `app_data_sample.parquet`
