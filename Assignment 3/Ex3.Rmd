@@ -128,6 +128,7 @@ applications <- applications %>%
 rm(examiner_race)
 rm(examiner_surnames)
 gc()
+write.csv(examiner_race, "apps_examiner_details.csv", row.names=FALSE)
 ```
 
 #2. Focus on Art Unit:Descriptive Stats
