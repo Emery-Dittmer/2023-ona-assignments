@@ -325,7 +325,7 @@ Based on the model output it appears that the for woemn the centrality and close
 
 Based on the previous responses it appears that gender does not have a significant impact for between degree but closeness and cnetrality ande much better predictors for men 
 
-```{r}
+```{r include=FALSE}
 
 hist(fit$residuals, main="Histogram of Residuals",
  ylab="Residuals")
