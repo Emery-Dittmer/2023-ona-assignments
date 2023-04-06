@@ -58,6 +58,13 @@ applications
 edges
 ```
 
+```{r}
+
+names(applications)
+
+```
+
+
 ## Clean Data
 Now that we have the data, we can clean and pre-process it. We will remove all the fields with NAs so that we can get meaningful insights. 
 ```{r cleaning the data}
